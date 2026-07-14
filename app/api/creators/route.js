@@ -33,7 +33,7 @@ export async function POST(request) {
     return json({ error: "invalid JSON body" }, 400);
   }
 
-  const { handle, wallet, nonce, issuedAt, signature, domain, uri, profile } = body || {};
+  const { handle, wallet, nonce, issuedAt, signature, domain, uri, chainId, profile } = body || {};
   if (!isValidHandle(handle)) return json({ error: "invalid or reserved handle" }, 400);
   if (!wallet || !nonce || !issuedAt || !signature) {
     return json({ error: "wallet, nonce, issuedAt and signature are required" }, 400);
@@ -42,7 +42,7 @@ export async function POST(request) {
   const dom = domain || new URL(request.url).host;
   const u = uri || `${new URL(request.url).protocol}//${dom}`;
 
-  const auth = await verifySignup({ domain: dom, address: wallet, handle, nonce, issuedAt, uri: u, signature });
+  const auth = await verifySignup({ domain: dom, address: wallet, handle, nonce, issuedAt, uri: u, chainId, signature });
   if (!auth.ok) return json({ error: `signature check failed: ${auth.reason}` }, 401);
 
   try {

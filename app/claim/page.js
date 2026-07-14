@@ -9,7 +9,7 @@ import { useState } from "react";
 import { getAddress } from "viem";
 
 // MUST match lib/siwe.mjs buildSiweMessage exactly (address verbatim).
-function buildSiweMessage({ domain, address, handle, nonce, issuedAt, uri }) {
+function buildSiweMessage({ domain, address, handle, nonce, issuedAt, uri, chainId }) {
   return [
     `${domain} wants you to sign in with your Ethereum account:`,
     address,
@@ -18,7 +18,7 @@ function buildSiweMessage({ domain, address, handle, nonce, issuedAt, uri }) {
     ``,
     `URI: ${uri}`,
     `Version: 1`,
-    `Chain ID: 8453`,
+    `Chain ID: ${chainId}`,
     `Nonce: ${nonce}`,
     `Issued At: ${issuedAt}`,
   ].join("\n");
@@ -51,13 +51,17 @@ export default function Claim() {
       // EIP-4361 requires an EIP-55 checksummed address in the message; some wallets return
       // a lowercase one, which makes the wallet refuse to render the SIWE request.
       const from = getAddress(rawFrom);
+      // Use the wallet's CURRENT chain in the message; MetaMask blocks the request if the
+      // message's Chain ID doesn't match the connected network. Signup is chain-agnostic
+      // (an off-chain signature), so whatever chain the user is on is fine.
+      const chainId = parseInt(await eth.request({ method: "eth_chainId" }), 16);
 
       setBusy("Getting nonce");
       const { nonce } = await (await fetch("/api/nonce")).json();
       const issuedAt = new Date().toISOString();
       const domain = window.location.host;
       const uri = window.location.origin;
-      const message = buildSiweMessage({ domain, address: from, handle: h, nonce, issuedAt, uri });
+      const message = buildSiweMessage({ domain, address: from, handle: h, nonce, issuedAt, uri, chainId });
 
       setBusy("Sign in your wallet");
       const signature = await eth.request({ method: "personal_sign", params: [message, rawFrom] });
@@ -72,7 +76,7 @@ export default function Claim() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          handle: h, wallet: from, nonce, issuedAt, signature,
+          handle: h, wallet: from, nonce, issuedAt, signature, chainId,
           profile: { display_name: displayName || null, bio: bio || null, email: email || null, tiers },
         }),
       });
