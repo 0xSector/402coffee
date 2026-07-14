@@ -6,6 +6,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAddress } from "viem";
 
 // MUST match lib/siwe.mjs buildSiweMessage exactly (address verbatim).
 function buildSiweMessage({ domain, address, handle, nonce, issuedAt, uri }) {
@@ -45,8 +46,11 @@ export default function Claim() {
 
     try {
       setBusy("Connecting wallet");
-      const [from] = await eth.request({ method: "eth_requestAccounts" });
-      if (!from) throw new Error("No account");
+      const [rawFrom] = await eth.request({ method: "eth_requestAccounts" });
+      if (!rawFrom) throw new Error("No account");
+      // EIP-4361 requires an EIP-55 checksummed address in the message; some wallets return
+      // a lowercase one, which makes the wallet refuse to render the SIWE request.
+      const from = getAddress(rawFrom);
 
       setBusy("Getting nonce");
       const { nonce } = await (await fetch("/api/nonce")).json();
@@ -56,7 +60,7 @@ export default function Claim() {
       const message = buildSiweMessage({ domain, address: from, handle: h, nonce, issuedAt, uri });
 
       setBusy("Sign in your wallet");
-      const signature = await eth.request({ method: "personal_sign", params: [message, from] });
+      const signature = await eth.request({ method: "personal_sign", params: [message, rawFrom] });
 
       setBusy("Creating your jar");
       const tiers = [
