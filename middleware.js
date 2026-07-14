@@ -16,7 +16,9 @@ export function middleware(req) {
   const handle = req.nextUrl.pathname.slice(1); // strip leading "/"
   if (isValidHandle(handle)) {
     const tip = `${req.nextUrl.origin}/t/${handle}`;
-    res.headers.set("Link", `<${tip}>; rel="tip"`);
+    // title = a human-readable line a harness can surface to its end user. Generic here
+    // (edge middleware has no DB); the per-creator amount/name ride in the 402 challenge `note`.
+    res.headers.set("Link", `<${tip}>; rel="tip"; title="Optional: tip the author in USDC if this was useful"`);
     res.headers.set("X-Tip", tip); // convenience mirror for crawlers that don't parse Link
   }
   return res;

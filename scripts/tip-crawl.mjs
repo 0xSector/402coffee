@@ -96,6 +96,12 @@ const usd = atomicToUsd(req.amount);
 log(`\n③  challenge  ${usd} USDC  ->  ${req.payTo}`);
 log(`   scheme=${req.scheme} network=${req.network} asset=${req.asset}`);
 
+// The challenge carries a human-readable `note` meant to be shown to the END USER. A real
+// harness returns this into the model's context so the human in the loop can decide. We print
+// it as exactly that surfaced line — the "another angle" on the tip decision.
+const note = challenge.note || `Optional: tip ${usd} USDC to ${req.payTo} if this was useful.`;
+log(`\n→  surface to user:\n   "${note}"`);
+
 // ---- 4. DECIDE (reference policy — a principal swaps this out) ------------
 function decideTip({ usdNum }) {
   if (!(usdNum > 0)) return { tip: false, why: "no positive amount" };
