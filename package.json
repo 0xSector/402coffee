@@ -1,0 +1,20 @@
+{
+  "name": "402coffee",
+  "version": "0.0.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "description": "Non-custodial x402 tip jars for the agentic web. Humans tip with a signature, agents tip over HTTP/MCP, USDC settles straight to the creator's wallet.",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@x402/core": "^2.18.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
