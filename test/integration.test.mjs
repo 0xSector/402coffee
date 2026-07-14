@@ -14,7 +14,10 @@ import {
   createOrUpdateCreator, getCreator, ownsHandle, resolveAmountUsd,
   sanitiseTiers, isValidHandle,
 } from "../lib/creators.mjs";
-import { recordTip, findByAuthNonce, listWall, creatorStats } from "../lib/tips.mjs";
+import { recordTip, findByAuthNonce, listWall, creatorStats, setHidden } from "../lib/tips.mjs";
+import { notifyTip } from "../lib/notify.mjs";
+import { createServer } from "node:http";
+import { createHmac } from "node:crypto";
 
 const HAVE_DB = dbConfigured();
 const skip = HAVE_DB ? false : "no DATABASE_URL (run: npm run test:db)";
@@ -118,6 +121,46 @@ test("tip ledger is idempotent on tx_hash and auth_nonce", { skip }, async () =>
   const wall = await listWall("tipme");
   assert.equal(wall.length, 1);
   assert.equal(wall[0].payer, bob.address);
+});
+
+test("notifyTip fires an HMAC-signed webhook with the right payload", { skip }, async () => {
+  if (!process.env.SIWE_SECRET) process.env.SIWE_SECRET = "test-secret-for-siwe";
+  const received = [];
+  const server = createServer((req, res) => {
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => { received.push({ sig: req.headers["x-402coffee-signature"], body }); res.writeHead(200); res.end("ok"); });
+  });
+  await new Promise((r) => server.listen(0, r));
+  const port = server.address().port;
+  try {
+    const creator = { handle: "hooky", webhook_url: `http://127.0.0.1:${port}/hook` };
+    const tip = { amount_usd: "2.5", payer: bob.address, channel: "widget", network: "base", tx_hash: "0xfeed", message: "nice", created_at: new Date().toISOString() };
+    await notifyTip(creator, tip);
+    // fire-and-forget inside notifyTip is awaited, but give the socket a tick
+    for (let i = 0; i < 20 && received.length === 0; i++) await new Promise((r) => setTimeout(r, 25));
+    assert.equal(received.length, 1, "webhook should be called once");
+    const payload = JSON.parse(received[0].body);
+    assert.equal(payload.type, "tip.settled");
+    assert.equal(payload.handle, "hooky");
+    assert.equal(payload.amount_usd, 2.5);
+    assert.equal(payload.tx_hash, "0xfeed");
+    const secret = process.env.WEBHOOK_SIGNING_SECRET || process.env.SIWE_SECRET || "402coffee";
+    const expect = "sha256=" + createHmac("sha256", secret).update(received[0].body).digest("hex");
+    assert.equal(received[0].sig, expect, "HMAC signature must verify");
+  } finally {
+    server.close();
+  }
+});
+
+test("moderation: setHidden flips wall visibility", { skip }, async () => {
+  await signup(alice, "modme");
+  const { tip } = await recordTip({ handle: "modme", amount_usd: "1", amount_atomic: "1000000", payer: bob.address, tx_hash: "0xmod1", auth_nonce: "0xmodn1" });
+  assert.equal((await listWall("modme")).length, 1);
+  await setHidden("modme", tip.id, true);
+  assert.equal((await listWall("modme")).length, 0); // hidden -> off the wall
+  await setHidden("modme", tip.id, false);
+  assert.equal((await listWall("modme")).length, 1);
 });
 
 test("pure helpers: handle validation, tiers, amount clamping", { skip: HAVE_DB ? false : undefined }, () => {

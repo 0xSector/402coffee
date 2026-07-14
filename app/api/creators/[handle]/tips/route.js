@@ -5,14 +5,14 @@
 
 import { verifySignup } from "../../../../../lib/siwe.mjs";
 import { ownsHandle } from "../../../../../lib/creators.mjs";
-import { listTips, creatorStats } from "../../../../../lib/tips.mjs";
+import { listTips, creatorStats, setHidden } from "../../../../../lib/tips.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CORS = {
   "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET,OPTIONS",
+  "access-control-allow-methods": "GET,POST,OPTIONS",
   "access-control-allow-headers": "content-type,x-siwe-address,x-siwe-nonce,x-siwe-issued-at,x-siwe-signature",
 };
 
@@ -64,4 +64,18 @@ export async function GET(request, ctx) {
   }
   const stats = await creatorStats(handle);
   return Response.json({ handle, stats, tips: rows }, { headers: CORS });
+}
+
+// Moderation: hide/unhide a tip from the public wall. SIWE-gated (owner only).
+export async function POST(request, ctx) {
+  const { handle } = await ctx.params;
+  const auth = await authOwner(request, handle);
+  if (!auth.ok) return Response.json({ error: `unauthorized: ${auth.reason}` }, { status: 401, headers: CORS });
+  let body;
+  try { body = await request.json(); } catch { return Response.json({ error: "invalid JSON" }, { status: 400, headers: CORS }); }
+  const { id, hidden } = body || {};
+  if (id == null || typeof hidden !== "boolean") return Response.json({ error: "id and hidden(boolean) required" }, { status: 400, headers: CORS });
+  const updated = await setHidden(handle, id, hidden);
+  if (!updated) return Response.json({ error: "tip not found" }, { status: 404, headers: CORS });
+  return Response.json({ ok: true, tip: updated }, { headers: CORS });
 }
