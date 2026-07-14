@@ -104,7 +104,7 @@
   function money(u) { return "$" + (Number(u) % 1 === 0 ? Number(u).toFixed(0) : Number(u).toFixed(2)); }
 
   function renderModal() {
-    var emojiFor = function (k) { return k === "coffee" ? "☕" : k === "beer" ? "🍺" : "💛"; };
+    var emojiFor = function (k) { return k === "tokens" ? "🧠" : k === "coffee" ? "☕" : k === "beer" ? "🍺" : "💛"; };
     var tierEls = tiers.map(function (t, i) {
       var d = el("div", { class: "tier" + (i === selected && customUsd == null ? " sel" : "") }, [
         el("div", { class: "em" }, [emojiFor(t.key)]),

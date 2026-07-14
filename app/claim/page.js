@@ -27,6 +27,7 @@ export default function Claim() {
   const [handle, setHandle] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [tokens, setTokens] = useState("0.5");
   const [coffee, setCoffee] = useState("1");
   const [beer, setBeer] = useState("5");
   const [email, setEmail] = useState("");
@@ -59,6 +60,7 @@ export default function Claim() {
 
       setBusy("Creating your jar");
       const tiers = [
+        { key: "tokens", label: "Tokens", usd: Number(tokens) || 0.5 },
         { key: "coffee", label: "Coffee", usd: Number(coffee) || 1 },
         { key: "beer", label: "Beer", usd: Number(beer) || 5 },
       ];
@@ -103,6 +105,9 @@ export default function Claim() {
             <input style={S.input} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Writing about onchain payments." maxLength={280} />
           </Field>
           <div style={{ display: "flex", gap: 12 }}>
+            <Field label="Tokens $" hint="agent tier" style={{ flex: 1 }}>
+              <input style={S.input} type="number" min="0.25" step="0.25" value={tokens} onChange={(e) => setTokens(e.target.value)} />
+            </Field>
             <Field label="Coffee $" style={{ flex: 1 }}>
               <input style={S.input} type="number" min="0.25" step="0.25" value={coffee} onChange={(e) => setCoffee(e.target.value)} />
             </Field>

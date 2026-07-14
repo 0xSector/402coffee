@@ -37,7 +37,7 @@ export async function GET(request) {
       "x-payment-info": paymentInfo,
       parameters: [
         { name: "amount", in: "query", required: false, schema: { type: "number" }, description: "USD tip amount (clamped to the creator's min/max)." },
-        { name: "tier", in: "query", required: false, schema: { type: "string" }, description: "Tier key (e.g. coffee, beer); overrides amount." },
+        { name: "tier", in: "query", required: false, schema: { type: "string" }, description: "Tier key (e.g. tokens, coffee, beer); overrides amount." },
       ],
       responses,
     };

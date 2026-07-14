@@ -48,7 +48,7 @@ const TOOLS = [
       properties: {
         handle: { type: "string" },
         amount_usd: { type: "number", description: "USD amount (clamped to the creator's min/max)" },
-        tier: { type: "string", description: "tier key like coffee or beer (overrides amount_usd)" },
+        tier: { type: "string", description: "tier key like tokens, coffee, or beer (overrides amount_usd)" },
         message: { type: "string" },
         name: { type: "string", description: "display name to show on the wall" },
         payment: { type: "string", description: "base64 PAYMENT-SIGNATURE if you've already signed the x402 authorization" },

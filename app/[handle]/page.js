@@ -27,7 +27,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-const emojiFor = (k) => (k === "coffee" ? "☕" : k === "beer" ? "🍺" : "💛");
+const emojiFor = (k) => (k === "tokens" ? "🧠" : k === "coffee" ? "☕" : k === "beer" ? "🍺" : "💛");
 const money = (u) => "$" + (Number(u) % 1 === 0 ? Number(u).toFixed(0) : Number(u).toFixed(2));
 const shortAddr = (a) => (a ? a.slice(0, 6) + "…" + a.slice(-4) : "");
 const when = (t) => { try { return new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" }); } catch { return ""; } };
