@@ -101,3 +101,11 @@ test("live: keyless testnet facilitator advertises exact/eip155:84532", { timeou
   assert.ok(match, "expected an 'exact' scheme on eip155:84532");
   console.log("advertised x402Version for exact/base-sepolia:", match.x402Version);
 });
+
+test("discovery docs get the CDN cache header only after a good DB read", async () => {
+  const { withCdnCache, DISCOVERY_CDN_CACHE } = await import("../lib/cdncache.mjs");
+  const base = { "cache-control": "public, max-age=60" };
+  assert.deepEqual(withCdnCache(base, true), { ...base, "vercel-cdn-cache-control": DISCOVERY_CDN_CACHE });
+  assert.deepEqual(withCdnCache(base, false), base); // outage: never pin an empty list
+  assert.equal(base["vercel-cdn-cache-control"], undefined); // input not mutated
+});

@@ -7,6 +7,7 @@
 //   wallet.
 
 import { listCreators } from "../../lib/creators.mjs";
+import { withCdnCache } from "../../lib/cdncache.mjs";
 import { activeNetwork } from "../../lib/config.mjs";
 
 export const runtime = "nodejs";
@@ -18,7 +19,8 @@ export async function GET(request) {
   const origin = new URL(request.url).origin;
   const net = activeNetwork();
   let creators = [];
-  try { creators = await listCreators({ limit: 500 }); } catch { creators = []; }
+  let dbOk = true;
+  try { creators = await listCreators({ limit: 500 }); } catch { dbOk = false; }
 
   const paths = {};
   for (const c of creators) {
@@ -64,6 +66,6 @@ export async function GET(request) {
   };
 
   return Response.json(spec, {
-    headers: { "access-control-allow-origin": "*", "cache-control": "public, max-age=60" },
+    headers: withCdnCache({ "access-control-allow-origin": "*", "cache-control": "public, max-age=60" }, dbOk),
   });
 }

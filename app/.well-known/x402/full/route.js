@@ -4,6 +4,7 @@
 //   the right jar. GET /.well-known/x402/full.
 
 import { listCreators } from "../../../../lib/creators.mjs";
+import { withCdnCache } from "../../../../lib/cdncache.mjs";
 import { buildRequirements } from "../../../../lib/x402.mjs";
 import { activeNetwork } from "../../../../lib/config.mjs";
 
@@ -14,7 +15,8 @@ export async function GET(request) {
   const origin = new URL(request.url).origin;
   const net = activeNetwork();
   let creators = [];
-  try { creators = await listCreators({ limit: 500 }); } catch { creators = []; }
+  let dbOk = true;
+  try { creators = await listCreators({ limit: 500 }); } catch { dbOk = false; }
 
   const resources = creators.flatMap((c) => {
     const who = c.display_name ? `${c.display_name} (@${c.handle})` : `@${c.handle}`;
@@ -46,6 +48,6 @@ export async function GET(request) {
       count: resources.length,
       resources,
     },
-    { headers: { "access-control-allow-origin": "*", "cache-control": "public, max-age=60" } },
+    { headers: withCdnCache({ "access-control-allow-origin": "*", "cache-control": "public, max-age=60" }, dbOk) },
   );
 }

@@ -6,6 +6,7 @@
 //   available at /.well-known/x402/full for humans/agents that want it.
 
 import { listCreators } from "../../../lib/creators.mjs";
+import { withCdnCache } from "../../../lib/cdncache.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,13 +14,14 @@ export const dynamic = "force-dynamic";
 export async function GET(request) {
   const origin = new URL(request.url).origin;
   let creators = [];
-  try { creators = await listCreators({ limit: 500 }); } catch { creators = []; }
+  let dbOk = true;
+  try { creators = await listCreators({ limit: 500 }); } catch { dbOk = false; }
 
   // One discoverable resource per creator (the default-tier tip endpoint returns a 402).
   const resources = creators.map((c) => `${origin}/t/${c.handle}`);
 
   return Response.json(
     { version: 1, resources },
-    { headers: { "access-control-allow-origin": "*", "cache-control": "public, max-age=60" } },
+    { headers: withCdnCache({ "access-control-allow-origin": "*", "cache-control": "public, max-age=60" }, dbOk) },
   );
 }
