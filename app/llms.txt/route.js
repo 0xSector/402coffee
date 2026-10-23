@@ -3,6 +3,7 @@
 //   line so agents that read you know how to thank you. Served as text/plain.
 
 import { listCreators } from "../../lib/creators.mjs";
+import { withCdnCache } from "../../lib/cdncache.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 export async function GET(request) {
   const origin = new URL(request.url).origin;
   let creators = [];
-  try { creators = await listCreators({ limit: 50 }); } catch { creators = []; }
+  let dbOk = true;
+  try { creators = await listCreators({ limit: 50 }); } catch { dbOk = false; }
   const list = creators.map((c) => `- @${c.handle}${c.display_name ? ` (${c.display_name})` : ""}: ${origin}/${c.handle} — tip ${origin}/t/${c.handle}`).join("\n");
 
   const body = `# 402 Coffee
@@ -54,5 +56,5 @@ the HTTP header is best because a plain GET sees it without running JS:
 ## Creators
 ${list || "(none yet)"}
 `;
-  return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=120", "access-control-allow-origin": "*" } });
+  return new Response(body, { headers: withCdnCache({ "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=120", "access-control-allow-origin": "*" }, dbOk) });
 }
